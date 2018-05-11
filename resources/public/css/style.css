@@ -1,0 +1,22 @@
+.popupmenu  {
+  position: absolute;
+  opacity: 0.9;
+  background-color: white;
+  border: 1px solid darkgrey;
+  width: 150px;
+  padding: 0px 5px 5px 5px;
+}
+.popupmenu-header {
+  margin: 5px 0px 0px 5px;
+  font-weight: bold;
+}
+
+
+.card-wrap  {
+  display: inline-block;
+}
+.card {
+  width: 100px;
+  border-radius: 2px;
+  
+}
