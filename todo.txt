@@ -1,0 +1,11 @@
+planets
+deploy
+- show deployed at planets
+- show command at planet
+play
+- add damage
+- reduce damage
+- move planet
+- move HQ
+- move Warlord
+
