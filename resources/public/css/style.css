@@ -1,22 +1,72 @@
-.popupmenu  {
+body  {
+  font-family: 'Exo 2', sans-serif;
+}
+
+#popupmenu  {
   position: absolute;
   opacity: 0.9;
   background-color: white;
   border: 1px solid darkgrey;
-  width: 150px;
-  padding: 0px 5px 5px 5px;
+  width: 120px;
+  padding: 5px;
 }
 .popupmenu-header {
   margin: 5px 0px 0px 5px;
   font-weight: bold;
 }
+.cardcount {
+  width: 1.8em;
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  background-color: darkblue;
+  color: white;
+  border-radius: 10px;
+  text-align: center;
+}
+.resources {
+  border-radius: 5px;
+  color: white;
+  background-color: darkblue;
+}
 
 
 .card-wrap  {
+  position: relative;
   display: inline-block;
+  vertical-align: top;
 }
 .card {
-  width: 100px;
+  width: 80px;
   border-radius: 2px;
-  
+  min-height: 100px;
+}
+.card-planet  {
+  width: 120px;
+  border-radius: 2px;
+  border: 1px solid gray;
+  min-height: 50px;
+}
+.can-play {
+   border: 1px solid blue;
+}
+.no-play {
+  border: 1px solid grey;
+}
+
+#log {
+  border: 1px solid grey;
+  height: 300px;
+  width: 100%;
+  border-radius: 10px;
+}
+.logitem  {
+  margin: 0px 5px;
+}
+
+.command {
+  float: right;
+}
+.command-icon {
+  display: block;
 }

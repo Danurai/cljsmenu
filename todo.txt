@@ -1,7 +1,8 @@
-planets
-deploy
-- show deployed at planets
-- show command at planet
+x planets
+x deploy
+x - show deployed at planets
+x - show command at planet
+x - pay cost
 play
 - add damage
 - reduce damage
