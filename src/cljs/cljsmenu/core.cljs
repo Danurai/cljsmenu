@@ -49,9 +49,9 @@
   (logaction "Shuffle Deck."))      
   
 (defn drawcard []
-  (swap! deck update-in [:decklist (->> @deck :decklist (take-while #(not= (:pos %) :deck)) count)]
-                      assoc :pos :hand)
-  (logaction "Draw Card."))
+  (let [drawid (->> @deck :decklist (filter #(= (:pos %) :deck)) first :idx)]
+    (swap! deck assoc :decklist (map #(if (= (:idx %) drawid) (assoc % :pos :hand) %) (:decklist @deck)))
+    (logaction "Draw Card.")))
   
 (defn build-deck [rawdeck]
   (let [all-cards (->> (map (fn [x] (repeat (x rawdeck) (getcard (name x)))) (keys rawdeck)) (reduce concat))]
@@ -75,7 +75,7 @@
        plnt (->> @planets (filter #(= (:id %) planet-id)) first)]
     (swap! deck update :resources - (:cost crd 0))
     (swap! deck assoc :decklist (map #(if (= (:idx %) card-id) (assoc % :pos planet-id) % ) (:decklist @deck)))
-    (logaction [:span [:a {:href "#"} (:name crd)] (str " deployed to " (:name plnt))])))
+    (logaction [:span [:a {:href "#" :on-mouse-over #(swap! appstate assoc :img (:img crd))} (:name crd)] (str " deployed to " (:name plnt))])))
 
 (defn toggle-popupmenu [e]
   (prn @menu)
@@ -125,10 +125,10 @@
     [:div "HQ"]
     [:div
       [:div#deck.card-wrap
-        [:img.card {:src nil :alt "deck" :on-click #(deck-click %)}] ;:src "xx/img/cardback.png"
+        [:img.card {:src "/img/cardback.png" :alt "deck" :on-click #(deck-click %)}] ;:src "/img/cardback.png"
         [:span.cardcount (->> @deck :decklist (filter #(= (:pos %) :deck)) count)]]
       [:div.card-wrap
-        [:img.card {:alt "warlord" :src nil}]] ;(-> @deck :warlord :img)}]
+        [:img.card {:alt "warlord" :src (-> @deck :warlord :img)}]] ;(-> @deck :warlord :img)}]
       [:div.card-wrap.resources 
         [:span.mx-2 [:i.fas.fa-cog.fa-xs.mr-2] (:resources @deck)]
         [:span.btn-sm{:on-click #(swap! deck update :resources dec)} "-"]
@@ -138,11 +138,11 @@
       (doall (for [r (->> @deck :decklist (filter #(= (:pos %) :hand)))]
         ^{:key (:idx r)}
           [:div.card-wrap {:class (if (<= (:cost r 0) (-> @deck :resources)) "can-play" "no-play") }
-            [:img.card {:src nil  ;(:img r)
+            [:img.card {:src (:img r)
                         :alt (:name r)
                         :on-click #(hand-click (:idx r) %)
                         ;:on-mouse-out #(swap! appstate assoc :img nil)
-                        :on-mouse-over #(swap! appstate assoc :img nil)}]]))]  ;(:img r)
+                        :on-mouse-over #(swap! appstate assoc :img (:img r))}]]))]  ;(:img r)
   ])
 
 (defn board-planets []
@@ -150,13 +150,13 @@
     (for [p @planets]
       (if (nil? (:winner p))
         ^{:key (:id p)}
-          [:div.row
+          [:div.row.my-2
             [:div.col-sm-4
               (for [crd (->> @deck :decklist (filter #(= (:pos %) (:id p))))]
-                ^{:key (:idx crd)}[:div.card-wrap [:img.card {:src nil :alt (:name crd)}]])
-              [:div.command (repeat (->> @deck :decklist (filter #(= (:pos %) (:id p))) (map :command_icons) (reduce +)) [:i.fas.fa-gavel.fa-sm.command-icon])]]
+                ^{:key (:idx crd)}[:div.card-wrap [:img.card {:src (:img crd) :alt (:name crd) :on-mouse-over #(swap! appstate assoc :img (:img crd))}]])
+              [:div.command (repeat (->> @deck :decklist (filter #(= (:pos %) (:id p))) (map :command_icons) (remove nil?) (reduce +)) [:i.fas.fa-gavel.fa-sm.command-icon])]] ; [:span.command-icon "C"])]]
             [:div.col-sm-4
-              [:div.card-planet [:img {:alt (if (:revealed p) (:name p) "Planet")}]]] ;:img (:img p)
+              [:div [:img.card-planet {:alt (if (:revealed p) (:name p) "Planet") :src (:img p) :on-mouse-over #(swap! appstate assoc :img (:img p))}]]] ;:img (:img p)
             [:div.col-sm-4]]))))
           
 (defn board-log []
@@ -167,14 +167,13 @@
   [:div.container-fluid
     [:div.row
       [:div.col-sm-9
-        [hq]]
-      [:div.col-sm-3
-        [:div.cardimg [:img {:hidden (nil? (:img @appstate)) :src (:img @appstate)}]]]]
-    [:div.row
-      [:div.col-sm-9
+        [hq]
         (board-planets)]
       [:div.col-sm-3
-        (board-log)]]
+        [:div.row
+          [:div.cardimg.w-100 [:img.img-fluid.float-right {:hidden (nil? (:img @appstate)) :src (:img @appstate)}]]]
+        [:div.row
+          (board-log)]]]
     [ctxmenu]
   ])
 

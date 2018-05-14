@@ -30,28 +30,36 @@ body  {
   background-color: darkblue;
 }
 
-
+.cardimg  {
+  height: 480px;
+}
 .card-wrap  {
   position: relative;
   display: inline-block;
   vertical-align: top;
+  margin: 2px;
+  border-radius: 5px;
+  border: 1px solid white;
 }
 .card {
   width: 80px;
-  border-radius: 2px;
   min-height: 100px;
 }
 .card-planet  {
-  width: 120px;
+  width: 150px;
+}
+.card-planet  {
+  height: 110px;
   border-radius: 2px;
   border: 1px solid gray;
   min-height: 50px;
 }
 .can-play {
-   border: 1px solid blue;
+   border: 2px solid limegreen;
 }
 .no-play {
-  border: 1px solid grey;
+  border: 2px solid grey;
+  opacity: 0.6;
 }
 
 #log {
