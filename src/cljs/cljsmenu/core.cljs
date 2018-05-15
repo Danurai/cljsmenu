@@ -26,6 +26,10 @@
 (def planets  (r/atom nil))
 (def log      (r/atom ()))
 
+(defn- dev? [] false)
+(defn- devimg [src]
+  (if (dev?) nil src))
+  
 ; Initalisation and deck fns
 (defn- getcard [code]  
   (->> @cards 
@@ -33,7 +37,6 @@
       first))
 
 (defn logaction [msg]
-  (prn msg)
   (swap! log conj ^{:key (gensym)}[:p.logitem msg]))
       
 (defn build-planets []
@@ -48,18 +51,21 @@
   (swap! deck assoc :decklist (-> @deck :decklist shuffle))
   (logaction "Shuffle Deck."))      
   
-(defn drawcard []
+(defn card-draw []
   (let [drawid (->> @deck :decklist (filter #(= (:pos %) :deck)) first :idx)]
     (swap! deck assoc :decklist (map #(if (= (:idx %) drawid) (assoc % :pos :hand) %) (:decklist @deck)))
     (logaction "Draw Card.")))
-  
+
+    
 (defn build-deck [rawdeck]
   (let [all-cards (->> (map (fn [x] (repeat (x rawdeck) (getcard (name x)))) (keys rawdeck)) (reduce concat))]
     (reset! deck {:warlord (->> all-cards (filter #(= (:type_code %) "warlord_unit")) first)
                 :resources (->> all-cards (filter #(= (:type_code %) "warlord_unit")) first :starting_resources)
+                :hp (->> all-cards (filter #(= (:type_code %) "warlord_unit")) first :hp)
+                :bloodied false
                 :decklist (map-indexed #(assoc %2 :idx %1 :pos :deck) (filter #(not= (:type_code %) "warlord_unit") all-cards))})
     (shuffledeck)
-    (dotimes [n (-> @deck :warlord :starting_hand)] (drawcard))))
+    (dotimes [n (-> @deck :warlord :starting_hand)] (card-draw))))
 
 (defn do-setup  []
   (go 
@@ -69,16 +75,39 @@
     (reset! log ())
 ))
 
+(defn hq-phase []
+  ; assign next First Planet - in code
+  ; Reveal next planet - in code
+  ; Draw 2 cards
+  (dotimes (n 2) (card-draw))
+  ; Take 4 Resources
+  (swap! deck update :resources + 4)
+  ; Ready all exhausted cards
+  (swap! deck assoc :decklist (map #(dissoc % :exhausted) (-> @deck :decklist)))
+  ; Pass Initiative
+  )
 
-(defn deploycard [card-id planet-id]
+(defn card-discard [idx]
+  (swap! deck assoc :decklist (map #(if (= (:idx %) idx) (assoc % :pos :discard) %)
+                              (-> @deck :decklist))))
+                              
+(defn card-deploy [card-id planet-id]
   (let [crd (->> @deck :decklist (filter #(= (:idx %) card-id)) first)
        plnt (->> @planets (filter #(= (:id %) planet-id)) first)]
     (swap! deck update :resources - (:cost crd 0))
     (swap! deck assoc :decklist (map #(if (= (:idx %) card-id) (assoc % :pos planet-id) % ) (:decklist @deck)))
-    (logaction [:span [:a {:href "#" :on-mouse-over #(swap! appstate assoc :img (:img crd))} (:name crd)] (str " deployed to " (:name plnt))])))
+    (logaction [:span [:a {:href "#" :on-mouse-over #(swap! appstate assoc :img (:img crd))} (:name crd)] (str " deployed to " (if (some? plnt) (:name plnt) "HQ"))])))
 
+(defn card-play [card-id]
+  (let [crd (->> @deck :decklist (filter #(= (:idx %) card-id)) first)]
+    (swap! deck update :resources - (:cost crd 0))
+    (card-discard card-id)
+    (logaction [:span "Played " [:a {:href "#" :on-mouse-over #(swap! appstate assoc :img (:img crd))} (:name crd)]])))
+    
+(defn card-toggle-exhaust [card-id] 
+  (swap! deck assoc :decklist (map #(if (= (:idx %) card-id) (assoc % :exhausted (-> % :exhausted true? not)) %) (@deck :decklist) )))
+  
 (defn toggle-popupmenu [e]
-  (prn @menu)
   (swap! menu assoc :hidden (->> @menu :hidden ((complement true?)))
                   :left (str (-> e .-pageX (- 20)) "px")
                   :top (str (-> e .-pageY (- 20)) "px")))
@@ -87,25 +116,34 @@
 ; Controller Functionality
 
 (defn deck-click [e]
-  (swap! menu assoc :buttons [{:title "Draw"    :data-action drawcard}
-                           {:title "Shuffle" :data-action shuffledeck}
-                           {:title "dropdown-divider"}])
+  (swap! menu assoc :buttons [{:title "Shuffle" :data-action shuffledeck}])
   (toggle-popupmenu e))
-    
+
+(defn discard-click [e]
+  (prn e))
+  
 (defn hand-click [idx e]
   (let [card (->> @deck :decklist (filter #(= (:idx %) idx)) first)]
     (when (<= (:cost card 0) (:resources @deck))
-      (swap! menu assoc :buttons 
-        (case (:type_code card) 
-          "army_unit"  (remove nil? (map #(if (:revealed %) {:title (:name %) :data-action (fn [] (deploycard (:idx card) (:id %)))}) @planets))
-          "attachment" (remove nil? (map #(if (:revealed %) {:title (:name %) :data-action (fn [] (deploycard (:idx card) (:id %)))}) @planets))
-          "event"     [{:title "Play"}]
-          "support"   [{:title "Play"}]
-          nil))
+      (swap! menu assoc :buttons
+        (concat 
+          (case (:type_code card) 
+            "army_unit"  (remove nil? (map #(if (:revealed %) {:title (:name %) :data-action (fn [] (card-deploy (:idx card) (:id %)))}) @planets))
+            "attachment" (remove nil? (map #(if (:revealed %) {:title (:name %) :data-action (fn [] (card-deploy (:idx card) (:id %)))}) @planets))
+            "event"     [{:title "Play" :data-action #(card-play (:idx card))}]
+            "support"   [{:title "Deploy to HQ" :data-action #(card-deploy (:idx card) -1)}]
+            nil)
+          [{:title "divider"}
+           {:title "Discard" :data-action #(card-discard (:idx card))}]))
       (toggle-popupmenu e))))
 
+(defn card-click [idx e]
+  (swap! menu assoc :buttons [{:title "Discard" :data-action #(card-discard idx)}
+                           {:title "Exhaust\\Ready" :data-action #(card-toggle-exhaust idx)}])
+  (toggle-popupmenu e))
 
-
+  
+ 
 ; Page Layout    
 
 (defn ctxmenu []
@@ -115,52 +153,87 @@
     ;[:div.popupmenu-header (:title @menu)]
     [:div.btn-group.btn-group-sm.btn-group-vertical.d-flex
       (for [button (:buttons @menu)]
-        ^{:key (:title button)}
-          [:button.btn.btn-block.btn-light 
-            {:on-click #((:data-action button)(close-popupmenu))}
-            (:title button)])]])
+        (if (= (:title button) "divider")
+          ^{:key (:title button)}[:div.dropdown-divider]
+          ^{:key (:title button)}
+            [:button.btn.btn-block.btn-light 
+              {:on-click #((:data-action button)(close-popupmenu))}
+              (:title button)]))]])
 
+(defn cardimgwrap [crd]
+    ^{:key (:idx crd)}[:div.card-wrap 
+      [:img.card {:class (if (true? (:exhausted crd)) "card-tapped")
+                :src (devimg (:img crd)) 
+                :alt (:name crd)
+                :on-click #(card-click (:idx crd) %)
+                :on-mouse-over #(swap! appstate assoc :img (:img crd))}]])
+            
 (defn hq []
   [:div#hq
     [:div "HQ"]
     [:div
+      [:div#discard.card-wrap
+        [:img.card {:src (devimg nil) :alt "discard" :on-click discard-click}]
+        [:span.cardcount (->> @deck :decklist (filter #(= (:pos %) :discard)) count)]]
       [:div#deck.card-wrap
-        [:img.card {:src "/img/cardback.png" :alt "deck" :on-click #(deck-click %)}] ;:src "/img/cardback.png"
+        [:img.card {:src (devimg "/img/cardback.png") :alt "deck" :on-click #(deck-click %)}]
         [:span.cardcount (->> @deck :decklist (filter #(= (:pos %) :deck)) count)]]
       [:div.card-wrap
-        [:img.card {:alt "warlord" :src (-> @deck :warlord :img)}]] ;(-> @deck :warlord :img)}]
+        [:img.card {:src (devimg (-> @deck :warlord :img)) :alt (-> @deck :warlord :name)}]] ;(-> @deck :warlord :img)}]
       [:div.card-wrap.resources 
-        [:span.mx-2 [:i.fas.fa-cog.fa-xs.mr-2] (:resources @deck)]
-        [:span.btn-sm{:on-click #(swap! deck update :resources dec)} "-"]
-        [:span.btn-sm {:on-click #(swap! deck update :resources inc)} "+"]]]
+        [:div 
+          [:span.mx-2 [:i.fas.fa-cog.fa-xs.mr-2] (:resources @deck)]
+          [:span.btn-res {:on-click #(swap! deck update :resources dec)} "-"]
+          [:span.btn-res {:on-click #(swap! deck update :resources inc)} "+"]]
+        [:div 
+          [:span.mx-2 [:i.fas.fa-heart.fa-xs.mr-2] (:hp @deck)]
+          [:span.btn-res {:on-click #(swap! deck update :hp dec)} "-"]
+          [:span.btn-res {:on-click #(swap! deck update :hp inc)} "+"]]
+        [:div.m-1
+          [:button.btn.btn-block.btn-outline-light.btn-sm
+            {:on-click #(card-draw)} "Draw"]]
+        [:div.m-1
+          [:button.btn.btn-block.btn-outline-light.btn-sm
+            {:on-click #(hq-phase)} "HQ Phase"]]]
+      [:div.card-wrap
+        (doall 
+          (for [crd (->> @deck :decklist (filter #(= (:pos %) -1)))]
+            (cardimgwrap crd)))]]
     [:div (str "Hand (" (->> @deck :decklist (filter #(= (:pos %) :hand)) count) ")")]
     [:div
       (doall (for [r (->> @deck :decklist (filter #(= (:pos %) :hand)))]
         ^{:key (:idx r)}
           [:div.card-wrap {:class (if (<= (:cost r 0) (-> @deck :resources)) "can-play" "no-play") }
-            [:img.card {:src (:img r)
+            [:img.card {:src (devimg (:img r))
                         :alt (:name r)
                         :on-click #(hand-click (:idx r) %)
                         ;:on-mouse-out #(swap! appstate assoc :img nil)
                         :on-mouse-over #(swap! appstate assoc :img (:img r))}]]))]  ;(:img r)
   ])
-
+  
 (defn board-planets []
-  (doall
-    (for [p @planets]
-      (if (nil? (:winner p))
+  (doall (for [p @planets]
+      (if (nil? (:winner p))  ; Only show Active Planets
         ^{:key (:id p)}
           [:div.row.my-2
+          ; P1 deployment
             [:div.col-sm-4
               (for [crd (->> @deck :decklist (filter #(= (:pos %) (:id p))))]
-                ^{:key (:idx crd)}[:div.card-wrap [:img.card {:src (:img crd) :alt (:name crd) :on-mouse-over #(swap! appstate assoc :img (:img crd))}]])
-              [:div.command (repeat (->> @deck :decklist (filter #(= (:pos %) (:id p))) (map :command_icons) (remove nil?) (reduce +)) [:i.fas.fa-gavel.fa-sm.command-icon])]] ; [:span.command-icon "C"])]]
+                (cardimgwrap crd))
+            ; Command Icons  
+              [:div.command
+                (for [n (range (->> @deck :decklist (filter #(= (:pos %) (:id p))) (map :command_icons) (remove nil?) (reduce +)))]
+                  ^{:key n}[:span [:i.fas.fa-gavel.fa-sm.command-icon]])]]
+          ; Planets  
             [:div.col-sm-4
-              [:div [:img.card-planet {:alt (if (:revealed p) (:name p) "Planet") :src (:img p) :on-mouse-over #(swap! appstate assoc :img (:img p))}]]] ;:img (:img p)
+              [:div [:img.card-planet {:src (devimg (:img p)) 
+                                    :alt (if (:revealed p) (:name p) "Planet")
+                                    :on-mouse-over #(swap! appstate assoc :img (:img p))}]]]
+          ; P2 deployment 
             [:div.col-sm-4]]))))
           
 (defn board-log []
-  [:div#log 
+  [:div#log
     (for [msg @log] msg)])
           
 (defn renderpage []
@@ -171,7 +244,7 @@
         (board-planets)]
       [:div.col-sm-3
         [:div.row
-          [:div.cardimg.w-100 [:img.img-fluid.float-right {:hidden (nil? (:img @appstate)) :src (:img @appstate)}]]]
+          [:div.cardimg.w-100 [:img.img-fluid.float-right {:hidden (nil? (:img @appstate)) :src (devimg (:img @appstate))}]]]
         [:div.row
           (board-log)]]]
     [ctxmenu]

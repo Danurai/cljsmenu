@@ -2,6 +2,32 @@ body  {
   font-family: 'Exo 2', sans-serif;
 }
 
+a:link  {
+  color: teal;
+}
+a:visited   {
+  color: teal;
+}
+a:hover {
+  color: lightseagreen;
+}
+a:active  {
+  color: lightseagreen;
+}
+
+#log {
+  border: 1px solid grey;
+  height: 300px;
+  width: 100%;
+  border-radius: 10px;
+  display: inline-flex;
+  flex-direction: column-reverse;
+  overflow: auto;
+}
+.logitem  {
+  margin: 0px 5px;
+}
+
 #popupmenu  {
   position: absolute;
   opacity: 0.9;
@@ -17,19 +43,23 @@ body  {
 .cardcount {
   width: 1.8em;
   position: absolute;
-  top: 5px;
-  left: 5px;
-  background-color: darkblue;
+  bottom: 0px;
+  left: 0px;
+  background-color: darkslategrey;
+  opacity: 0.7;
   color: white;
-  border-radius: 10px;
+  border-radius: 5px;
   text-align: center;
 }
 .resources {
   border-radius: 5px;
   color: white;
-  background-color: darkblue;
+  background-color: darkslategrey;
 }
-
+.btn-res  {
+  cursor: pointer;
+  padding: 4px 8px;
+}
 .cardimg  {
   height: 480px;
 }
@@ -44,12 +74,15 @@ body  {
 .card {
   width: 80px;
   min-height: 100px;
+  transition: transform 1s; 
 }
-.card-planet  {
-  width: 150px;
+.card-tapped  {
+  transform: rotate(90deg);
+  transition: transform 1s; 
 }
 .card-planet  {
   height: 110px;
+  min-width: 150px;
   border-radius: 2px;
   border: 1px solid gray;
   min-height: 50px;
@@ -62,15 +95,6 @@ body  {
   opacity: 0.6;
 }
 
-#log {
-  border: 1px solid grey;
-  height: 300px;
-  width: 100%;
-  border-radius: 10px;
-}
-.logitem  {
-  margin: 0px 5px;
-}
 
 .command {
   float: right;
