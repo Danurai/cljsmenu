@@ -3,11 +3,12 @@ x deploy
 x - show deployed at planets
 x - show command at planet
 x - pay cost
-- discard
+x discard
 - top of deck
 - Bottom of deck
-- Exhasut
-- Ready
+x Exhaust
+x Ready
+x HQ Phase
 play
 - add damage
 - reduce damage

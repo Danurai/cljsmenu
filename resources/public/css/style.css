@@ -1,7 +1,6 @@
 body  {
   font-family: 'Exo 2', sans-serif;
 }
-
 a:link  {
   color: teal;
 }
@@ -40,7 +39,7 @@ a:active  {
   margin: 5px 0px 0px 5px;
   font-weight: bold;
 }
-.cardcount {
+.whc-cardcount {
   width: 1.8em;
   position: absolute;
   bottom: 0px;
@@ -52,6 +51,12 @@ a:active  {
   text-align: center;
 }
 .resources {
+  position: relative;
+  display: inline-block;
+  vertical-align: top;
+  margin: 2px;
+  border-radius: 5px;
+  border: 1px solid white;
   border-radius: 5px;
   color: white;
   background-color: darkslategrey;
@@ -60,30 +65,31 @@ a:active  {
   cursor: pointer;
   padding: 4px 8px;
 }
-.cardimg  {
+.whc-cardimg  {
   height: 480px;
 }
-.card-wrap  {
+.whc-card-wrap  {
   position: relative;
   display: inline-block;
   vertical-align: top;
   margin: 2px;
   border-radius: 5px;
   border: 1px solid white;
+  width: 82px;
 }
-.card {
+.whc-card {
   width: 80px;
   min-height: 100px;
   transition: transform 1s; 
 }
-.card-tapped  {
+.whc-card-tapped  {
   transform: rotate(90deg);
   transition: transform 1s; 
 }
-.card-planet  {
+.whc-card-planet  {
   height: 110px;
   min-width: 150px;
-  border-radius: 2px;
+  border-radius: 3px;
   border: 1px solid gray;
   min-height: 50px;
 }
@@ -96,8 +102,11 @@ a:active  {
 }
 
 
-.command {
+.commandl {
   float: right;
+}
+.commandr {
+  float: left;
 }
 .command-icon {
   display: block;
