@@ -1,18 +1,55 @@
+BUG
+x Damage assign to individual card
+x Discard Shield Card
+
+2 - Setup (MVP Y)
+  x Determine Initiative
+  
+3.1 - Deploy (MVP ?)
+  x Return to hand (assoc, res)
+  o Attach
+  o Pass
+  x Command Icons - only Ready units
+  x Add Counters
+  
+3.2 - Command
+  X Commit Warlord to planet #
+    o Take additional HQ Units
+    o Exhaust additional units
+  o Command Struggle Results - Warlord = Win, Compare Cmd Icons
+
+3.3 - Combat
+  - First planet and all planets with a Warlord
+  o Combat Round + Ranged (round 1)
+  x Play Shields
+  x Assign Damage
+  o Bloodied Warlord
+  o Retreat Warlord
+  o Retreat
+  O Win Planet
+
+3.4 - HQ
+
+
+o First Planet
+
+
+
 x planets
 x deploy
 x - show deployed at planets
 x - show command at planet
 x - pay cost
 x discard
-- top of deck
-- Bottom of deck
+O top of deck
+O Bottom of deck
 x Exhaust
 x Ready
 x HQ Phase
 play
-- add damage
-- reduce damage
-- move planet
+x add damage
+x reduce damage
+x move planet
 - move HQ
 - move Warlord
 
